@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="Settings">
+        <setting label="Nightscout" type="lsep" />
+        <setting id="nightscout" type="text" label="URL" default="https://<USER>.herokuapp.com" />
+    </category>
+</settings>
