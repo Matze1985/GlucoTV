@@ -3,5 +3,7 @@
     <category label="Settings">
         <setting label="Nightscout" type="lsep" />
         <setting id="nightscout" type="text" label="URL" default="https://<USER>.herokuapp.com" />
+		<setting label="Option" type="lsep" />
+		<setting id="alarm" type="select" label="Alarm" values="On|Off" default="Off" />
     </category>
 </settings>

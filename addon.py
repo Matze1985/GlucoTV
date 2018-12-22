@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import xbmc, xbmcaddon, xbmcgui
-import urllib2, json
+import urllib2, json, time
 
 # Addon
 __addon__ = xbmcaddon.Addon()
@@ -11,18 +11,27 @@ addonid = __addon__.getAddonInfo('id')
 addonicon = xbmc.translatePath(__addon__.getAddonInfo('icon'))
 
 # Settings and API from Nightscout
-nightscout = __addon__.getSetting('nightscout')
+sNightscout = __addon__.getSetting('nightscout')
+sAlarm = __addon__.getSetting('alarm')
 
-# Load JSON from url 
-urlEntries = urllib2.urlopen(nightscout + '/api/v1/entries/sgv.json?count=2')
+# Load JSON from url
+urlEntries = urllib2.urlopen(sNightscout + '/api/v1/entries/sgv.json?count=2')
 jsonEntries = json.load(urlEntries)
-urlStatus = urllib2.urlopen(nightscout + '/api/v1/status.json')
+urlStatus = urllib2.urlopen(sNightscout + '/api/v1/status.json')
 jsonStatus = json.load(urlStatus)
 
-# Read all values
-sDirection = str("DoubleUp")
-iSgv = int(jsonEntries[0]['sgv']) 
-iLastSgv = int(jsonEntries[1]['sgv']) 
+# Read glucose values
+iSgv = int(jsonEntries[0]['sgv'])
+iLastSgv = int(jsonEntries[1]['sgv'])
+
+# Read unix date values diff
+iDate = int(jsonEntries[0]['date'])
+iLastDate = int(jsonEntries[1]['date'])
+iServerTimeEpoch = int(jsonStatus['serverTimeEpoch'])
+iMsReadInterval = iDate - iLastDate # 300091
+iMsServerTimeEpoch = iServerTimeEpoch - iDate
+iMin = iMsServerTimeEpoch / 60000
+
 sStatus = str(jsonStatus['status'])
 sName = str(jsonStatus['name'])
 sUnits = str(jsonStatus['settings']['units'])
@@ -33,19 +42,40 @@ iBgTargetTop = int(jsonStatus['settings']['thresholds']['bgTargetTop'])
 iBgTargetBottom = int(jsonStatus['settings']['thresholds']['bgTargetBottom'])
 iBgLow = int(jsonStatus['settings']['thresholds']['bgLow'])
 
+# Check status of Nightscout
+if sStatus <> 'ok':
+	xbmcgui.Dialog().notification(addonname, 'Please check the settings and the availability of URL! • ' + 'Status: ' + sStatus, xbmcgui.NOTIFICATION_ERROR)
+
 # Check if sUnits: mmol
 i_fSgv = ''
 i_fLastSgv = ''
 if sUnits == 'mmol':
-	i_fSgv = round(float(iSgv / 18.01559 * 10 / 10), 1)
-	i_fLastSgv = round(float(iLastSgv / 18.01559 * 10 / 10), 1)
-	
+	i_fSgv = round(float(iSgv * 0.0555), 1)
+	i_fLastSgv = round(float(iLastSgv * 0.0555), 1)
+else:
+	i_fSgv = iSgv
+	i_fLastSgv = iLastSgv
+
 # Calculate delta
-i_fDelta = round(float(i_fSgv - i_fLastSgv), 1)	
+i_fDelta = float(i_fSgv - i_fLastSgv)
+sDeltaValidateNull = ''
+if i_fDelta > 0:
+	sDeltaValidateNull = str('+')
+if i_fDelta == 0:
+	sDeltaValidateNull = str('±')
 
 # Notification
-xbmc.executebuiltin('Notification(%s, %s, %s, %s)'%(sName, str(i_fSgv) + ' ' + sUnits + " " + str(i_fDelta), sTrend, addonicon))
+xbmc.executebuiltin('Notification(%s, %s, %s, %s)'%(str(i_fSgv) + ' ' + sUnits + ' • ' + sDeltaValidateNull + str(i_fDelta),str(iMin) + ' min ago', 2000, addonicon))
 
+# Alarm
+if sAlarm == 'On' and iMin == 0:
+	if iSgv <= iBgLow or iSgv >= iBgHigh or iSgv <= iBgTargetBottom or iSgv >= iBgTargetTop:
+		xbmc.Player().play(sNightscout + '/audio/alarm.mp3')
+	
 # Close url
 urlStatus.close()
 urlEntries.close()
+
+# Sleep and execute
+xbmc.sleep(1000)
+xbmc.executebuiltin("XBMC.RunAddon(" + addonid + ")")
