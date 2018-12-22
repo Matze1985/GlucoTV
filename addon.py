@@ -65,7 +65,7 @@ if i_fDelta == 0:
 	sDeltaValidateNull = str('±')
 
 # Notification
-xbmc.executebuiltin('Notification(%s, %s, %s, %s)'%(str(i_fSgv) + ' ' + sUnits + ' • ' + sDeltaValidateNull + str(i_fDelta),str(iMin) + ' min ago', 2000, addonicon))
+xbmc.executebuiltin('Notification(%s, %s, %s, %s)'%(str(i_fSgv) + ' ' + sUnits + ' • ' + sDeltaValidateNull + str(i_fDelta),str(iMin) + ' min ago', 5000, addonicon))
 
 # Alarm
 if sAlarm == 'On' and iMin == 0:
