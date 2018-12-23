@@ -10,7 +10,7 @@ addonname = __addon__.getAddonInfo('name')
 addonid = __addon__.getAddonInfo('id')
 addonicon = xbmc.translatePath(__addon__.getAddonInfo('icon'))
 
-# Settings and API from Nightscout
+# Settings
 sNightscout = __addon__.getSetting('nightscout')
 sAlarm = __addon__.getSetting('alarm')
 
@@ -28,9 +28,9 @@ iLastSgv = int(jsonEntries[1]['sgv'])
 iDate = int(jsonEntries[0]['date'])
 iLastDate = int(jsonEntries[1]['date'])
 iServerTimeEpoch = int(jsonStatus['serverTimeEpoch'])
-iMsReadInterval = iDate - iLastDate # 300091
 iMsServerTimeEpoch = iServerTimeEpoch - iDate
 iMin = iMsServerTimeEpoch / 60000
+iSec = iMsServerTimeEpoch / 6000
 
 sStatus = str(jsonStatus['status'])
 sName = str(jsonStatus['name'])
@@ -44,7 +44,7 @@ iBgLow = int(jsonStatus['settings']['thresholds']['bgLow'])
 
 # Check status of Nightscout
 if sStatus <> 'ok':
-	xbmcgui.Dialog().notification(addonname, 'Please check the settings and the availability of URL! • ' + 'Status: ' + sStatus, xbmcgui.NOTIFICATION_ERROR)
+	xbmcgui.Dialog().notification(addonname, 'Please check the settings and the availability of URL! • ' + 'Status: [' + sStatus + ']', xbmcgui.NOTIFICATION_ERROR)
 
 # Check if sUnits: mmol
 i_fSgv = ''
@@ -58,23 +58,29 @@ else:
 
 # Calculate delta
 i_fDelta = float(i_fSgv - i_fLastSgv)
-sDeltaValidateNull = ''
+sDelta = ''
 if i_fDelta > 0:
-	sDeltaValidateNull = str('+')
+	sDelta = str('+')
 if i_fDelta == 0:
-	sDeltaValidateNull = str('±')
+	sDelta = str('±')
 
 # Notification
-xbmc.executebuiltin('Notification(%s, %s, %s, %s)'%(str(i_fSgv) + ' ' + sUnits + ' • ' + sDeltaValidateNull + str(i_fDelta),str(iMin) + ' min ago', 5000, addonicon))
+sHeader = str(i_fSgv) + ' ' + sUnits + ' • ' + sDelta + str(i_fDelta)
+sMessage = 'just now'
 
 # Alarm
-if sAlarm == 'On' and iMin == 0:
-	if iSgv <= iBgLow or iSgv >= iBgHigh or iSgv <= iBgTargetBottom or iSgv >= iBgTargetTop:
-		xbmc.Player().play(sNightscout + '/audio/alarm.mp3')
+bAlarm = ''
+if iSgv <= iBgLow or iSgv >= iBgHigh or iSgv <= iBgTargetBottom or iSgv >= iBgTargetTop:
+	bAlarm = True
+else:
+	bAlarm = False
+
+if iMin == 0 and iSec == 0 or iSec == 1 or iSec == 2:
+	xbmcgui.Dialog().notification(sHeader, sMessage, addonicon, 5000, bAlarm)
 	
 # Close url
-urlStatus.close()
 urlEntries.close()
+urlStatus.close()
 
 # Sleep and execute
 xbmc.sleep(1000)
