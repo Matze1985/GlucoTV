@@ -5,5 +5,6 @@
         <setting id="nightscout" type="text" label="URL" default="https://<USER>.herokuapp.com" />
 		<setting label="Option" type="lsep" />
 		<setting id="alarm" type="select" label="Alarm" values="On|Off" default="Off" />
+		<setting id="notification" type="select" label="Show notification" values="1 sec|2 sec|3 sec|4 sec|5 sec|6 sec|7 sec|8 sec|9 sec|10 sec" default="5 sec" />
     </category>
 </settings>

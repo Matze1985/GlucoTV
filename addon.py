@@ -13,6 +13,7 @@ addonicon = xbmc.translatePath(__addon__.getAddonInfo('icon'))
 # Settings
 sNightscout = __addon__.getSetting('nightscout')
 sAlarm = __addon__.getSetting('alarm')
+sNotification = __addon__.getSetting('notification')
 
 # Load JSON from url
 urlEntries = urllib2.urlopen(sNightscout + '/api/v1/entries/sgv.json?count=2')
@@ -28,9 +29,9 @@ iLastSgv = int(jsonEntries[1]['sgv'])
 iDate = int(jsonEntries[0]['date'])
 iLastDate = int(jsonEntries[1]['date'])
 iServerTimeEpoch = int(jsonStatus['serverTimeEpoch'])
-iMsServerTimeEpoch = iServerTimeEpoch - iDate
-iMin = iMsServerTimeEpoch / 60000
-iSec = iMsServerTimeEpoch / 6000
+iMsServerTimeEpochDate = iServerTimeEpoch - iDate
+iMin = iMsServerTimeEpochDate / 60000
+iMsWait = iMsServerTimeEpochDate / iMin
 
 sStatus = str(jsonStatus['status'])
 sName = str(jsonStatus['name'])
@@ -66,22 +67,46 @@ if i_fDelta == 0:
 
 # Notification
 sHeader = str(i_fSgv) + ' ' + sUnits + ' • ' + sDelta + str(i_fDelta)
-sMessage = 'just now'
+sMessage1 = str('just now')
+sMessage2 = str(iMin) + str(' min ago')
+
+if sNotification == '1 sec':
+	iNotificationTime = 1000
+if sNotification == '2 sec':
+	iNotificationTime = 2000
+if sNotification == '3 sec':
+	iNotificationTime = 3000
+if sNotification == '4 sec':
+	iNotificationTime = 4000
+if sNotification == '5 sec':
+	iNotificationTime = 5000
+if sNotification == '6 sec':
+	iNotificationTime = 6000
+if sNotification == '7 sec':
+	iNotificationTime = 7000
+if sNotification == '8 sec':
+	iNotificationTime = 8000
+if sNotification == '9 sec':
+	iNotificationTime = 9000
+if sNotification == '10 sec':
+	iNotificationTime = 10000
 
 # Alarm
 bAlarm = ''
-if iSgv <= iBgLow or iSgv >= iBgHigh or iSgv <= iBgTargetBottom or iSgv >= iBgTargetTop:
+if iSgv <= iBgLow or iSgv >= iBgHigh or iSgv <= iBgTargetBottom or iSgv >= iBgTargetTop or iMin >= 10:
 	bAlarm = True
 else:
 	bAlarm = False
 
-if iMin == 0 and iSec == 0 or iSec == 1 or iSec == 2:
-	xbmcgui.Dialog().notification(sHeader, sMessage, addonicon, 5000, bAlarm)
+if iMin == 0:
+	xbmcgui.Dialog().notification(sHeader, sMessage1, addonicon, iNotificationTime , bAlarm)
+if iMin >= 10:
+	xbmcgui.Dialog().notification(sHeader, sMessage2, addonicon, iNotificationTime, bAlarm)
 	
 # Close url
 urlEntries.close()
 urlStatus.close()
 
 # Sleep and execute
-xbmc.sleep(1000)
+xbmc.sleep(iMsWait)
 xbmc.executebuiltin("XBMC.RunAddon(" + addonid + ")")
