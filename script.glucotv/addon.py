@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import xbmc, xbmcaddon, xbmcgui
-import urllib2, json
+import urllib2, json, sys
 
 # Addon
 __addon__ = xbmcaddon.Addon()
@@ -11,7 +11,7 @@ addonid = __addon__.getAddonInfo('id')
 addonicon = xbmc.translatePath(__addon__.getAddonInfo('icon'))
 
 # Info dialog for starting progran
-xbmcgui.Dialog().notification(addonname, 'Program started successfully!', xbmcgui.NOTIFICATION_INFO)
+xbmcgui.Dialog().notification(addonname, 'Program started ...', xbmcgui.NOTIFICATION_INFO)
 
 while 1:
 	# Settings
@@ -20,10 +20,17 @@ while 1:
 	sNotification = __addon__.getSetting('notification')
 
 	# Load JSON from url
-	urlEntries = urllib2.urlopen(sNightscout + '/api/v1/entries/sgv.json?count=2')
-	jsonEntries = json.load(urlEntries)
-	urlStatus = urllib2.urlopen(sNightscout + '/api/v1/status.json')
-	jsonStatus = json.load(urlStatus)
+	try:
+		urlEntries = urllib2.urlopen(sNightscout + '/api/v1/entries/sgv.json?count=2')
+		jsonEntries = json.load(urlEntries)	
+		urlStatus = urllib2.urlopen(sNightscout + '/api/v1/status.json')
+		jsonStatus = json.load(urlStatus)
+	except urllib2.HTTPError, e:
+		xbmcgui.Dialog().notification(addonname, 'HTTPError: ' + str(e.code), xbmcgui.NOTIFICATION_ERROR)
+		sys.exit()
+	except urllib2.URLError, e:
+		xbmcgui.Dialog().notification(addonname, 'URLError: ' + str(e.args), xbmcgui.NOTIFICATION_ERROR)
+		sys.exit()
 
 	# Read glucose values
 	iSgv = int(jsonEntries[0]['sgv'])
@@ -36,10 +43,10 @@ while 1:
 	iMsServerTimeEpochDate = iServerTimeEpoch - iDate
 	iMin = iMsServerTimeEpochDate / 60000
 
-	# Calculate ms for waiting
+	# Calculate ms for sleep 
 	iMsWait = ''
 	if iMin == 0:
-		iMsWait = iMsServerTimeEpochDate + 60000
+		iMsWait = 60000 - iMsServerTimeEpochDate
 	else:
 		iMsWait = iMsServerTimeEpochDate / iMin
 
@@ -117,5 +124,5 @@ while 1:
 	urlEntries.close()
 	urlStatus.close()
 
-	# Sleep and execute
+	# Sleep
 	xbmc.sleep(iMsWait)
