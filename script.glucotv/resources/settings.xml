@@ -4,6 +4,7 @@
         <setting label="Nightscout" type="lsep" />
         <setting id="nightscout" type="text" label="URL" default="https://<USER>.herokuapp.com" />
 		<setting label="Option" type="lsep" />
+		<setting id="delay" type="select" label="Delay" values="1 sec|2 sec|3 sec|4 sec|5 sec|6 sec|7 sec|8 sec|9 sec|10 sec" default="3 sec" />
 		<setting id="sound" type="select" label="Sound (If possible)" values="On|Off" default="Off" />
     </category>
 </settings>

@@ -16,8 +16,30 @@ xbmcgui.Dialog().notification(addonname, str('Add-on started ...'), xbmcgui.NOTI
 while 1:
 	# Settings
 	sNightscout = __addon__.getSetting('nightscout')
+	sDelay = __addon__.getSetting('delay')
 	sSound = __addon__.getSetting('sound')
 	sNotification = __addon__.getSetting('notification')
+
+	if sDelay == '1 sec':
+		iMsDelay = 1000
+	if sDelay == '2 sec':
+		iMsDelay = 2000
+	if sDelay == '3 sec':
+		iMsDelay = 3000
+	if sDelay == '4 sec':
+		iMsDelay = 4000
+	if sDelay == '5 sec':
+		iMsDelay = 5000
+	if sDelay == '6 sec':
+		iMsDelay = 6000
+	if sDelay == '7 sec':
+		iMsDelay = 7000
+	if sDelay == '8 sec':
+		iMsDelay = 8000
+	if sDelay == '9 sec':
+		iMsDelay = 9000
+	if sDelay == '10 sec':
+		iMsDelay = 10000
 
 	# Load JSON from url
 	try:
@@ -121,7 +143,7 @@ while 1:
 	if sMin.endswith(str(iMinInterval)[-1:]) or sMin.endswith(str(iMinSecondInterval)[-1:]) and iMin >= iMinInterval:
 		sMinAgo = sColorYellow + sMinAgo + sColor
 		xbmcgui.Dialog().notification(sGlucose, sMinAgo, addonicon, 5000, bSound)
-	xbmc.sleep(iMsWait)
+	xbmc.sleep(iMsWait + iMsDelay)
 	
 	# Close url
 	urlEntries.close()
