@@ -118,7 +118,7 @@ while 1:
 
 	if iMin == 0:
 		xbmcgui.Dialog().notification(sGlucose, sJustNow, addonicon, 5000, bSound)
-	if sMin.endswith(str(iMinInterval)[-1:]) or sMin.endswith(str(iMinSecondInterval)[-1:]):
+	if sMin.endswith(str(iMinInterval)[-1:]) or sMin.endswith(str(iMinSecondInterval)[-1:]) and iMin >= iMinInterval:
 		sMinAgo = sColorYellow + sMinAgo + sColor
 		xbmcgui.Dialog().notification(sGlucose, sMinAgo, addonicon, 5000, bSound)
 	xbmc.sleep(iMsWait)
