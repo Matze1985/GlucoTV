@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import xbmc, xbmcaddon, xbmcgui
-import urllib2, json, sys
+import urllib2, json
 
 # Addon
 __addon__ = xbmcaddon.Addon()
@@ -16,43 +16,21 @@ xbmcgui.Dialog().notification(addonname, str('Add-on started ...'), xbmcgui.NOTI
 while 1:
 	# Settings
 	sNightscout = __addon__.getSetting('nightscout')
-	sDelay = __addon__.getSetting('delay')
 	sSound = __addon__.getSetting('sound')
 	sNotification = __addon__.getSetting('notification')
 
-	if sDelay == '1 sec':
-		iMsDelay = 1000
-	if sDelay == '2 sec':
-		iMsDelay = 2000
-	if sDelay == '3 sec':
-		iMsDelay = 3000
-	if sDelay == '4 sec':
-		iMsDelay = 4000
-	if sDelay == '5 sec':
-		iMsDelay = 5000
-	if sDelay == '6 sec':
-		iMsDelay = 6000
-	if sDelay == '7 sec':
-		iMsDelay = 7000
-	if sDelay == '8 sec':
-		iMsDelay = 8000
-	if sDelay == '9 sec':
-		iMsDelay = 9000
-	if sDelay == '10 sec':
-		iMsDelay = 10000
-
 	# Load JSON from url
 	try:
-		urlEntries = urllib2.urlopen(sNightscout + str('/api/v1/entries/sgv.json?count=3'))
+		urlEntries = urllib2.urlopen(sNightscout + str('/api/v1/entries/sgv.json?count=2'))
 		jsonEntries = json.load(urlEntries)	
 		urlStatus = urllib2.urlopen(sNightscout + str('/api/v1/status.json'))
 		jsonStatus = json.load(urlStatus)
 	except urllib2.HTTPError, e:
 		xbmcgui.Dialog().notification(addonname, str('HTTP-Error: ') + str(e.code), xbmcgui.NOTIFICATION_ERROR)
-		sys.exit()
+		#sys.exit()
 	except urllib2.URLError, e:
 		xbmcgui.Dialog().notification(addonname, str('URL-Error: ') + str(e.args), xbmcgui.NOTIFICATION_ERROR)
-		sys.exit()
+		#sys.exit()
 
 	# Read glucose values
 	iSgv = int(jsonEntries[0]['sgv'])
@@ -64,18 +42,18 @@ while 1:
 	iServerTimeEpoch = int(jsonStatus['serverTimeEpoch'])
 	
 	# Calculate and strings
-	iMsServerTimeEpochDate = iServerTimeEpoch - iDate
-	iMsInterval = iDate - iLastDate
-	iMinInterval = iMsInterval / 60000 + 1
-	iMinSecondInterval = iMinInterval * 2
-	iMin = iMsServerTimeEpochDate / 60000
+	iMsServerTimeEpochDate = int(iServerTimeEpoch - iDate)
+	iMsInterval = int(iDate - iLastDate)
+	iMinInterval = int(iMsInterval / 60000 + 1)
+	iMinSecondInterval = int(iMinInterval * 2)
+	iMin = int(iMsServerTimeEpochDate / 60000)
 
 	# Calculate ms for sleep 
 	iMsWait = ''
 	if iMin == 0:
-		iMsWait = 60000 - iMsServerTimeEpochDate
+		iMsWait = int(60000 - iMsServerTimeEpochDate)
 	else:
-		iMsWait = iMsServerTimeEpochDate / iMin
+		iMsWait = int(iMsServerTimeEpochDate / iMin)
 
 	sStatus = str(jsonStatus['status'])
 	sName = str(jsonStatus['name'])
@@ -88,7 +66,7 @@ while 1:
 	iBgLow = int(jsonStatus['settings']['thresholds']['bgLow'])
 
 	# Check status of Nightscout
-	if sStatus <> str('ok'):
+	if 'ok' not in sStatus:
 		xbmcgui.Dialog().notification(addonname, str('Please check the settings and the availability of URL! • ') + str('Status: [' + sStatus + ']'), xbmcgui.NOTIFICATION_ERROR)
 
 	# Check if sUnits: mmol
@@ -107,7 +85,7 @@ while 1:
 	sDirection = str(jsonEntries[0]['direction'])
 	if i_fSgv < i_fLastSgv:
 		if sDirection == str('FortyFiveUp') or sDirection == str('SingleUp') or sDirection == str('DoubleUp'):
-			sTmpDelta = str(i_fDelta.replace('-', ''))
+			sTmpDelta = sTmpDelta.replace('-', '')
 			i_fDelta = float(sTmpDelta)
 	
 	sDelta = ''
@@ -116,7 +94,13 @@ while 1:
 	if i_fDelta == 0:
 		sDelta = str('±')
 
+	if sUnits == str('mg/dl'):
+		i_fDelta = int(i_fDelta)
+	else:
+		i_fDelta = round(i_fDelta, 1)
+
 	# Notification
+	sMin = str(iMin)
 	sGlucose = str(i_fSgv) + str(' ') + sUnits + str(' • ') + sDelta + str(i_fDelta)
 	sJustNow = str('just now')
 	sMinAgo = str(iMin) + str(' min ago')
@@ -134,16 +118,21 @@ while 1:
 	bSound = False
 	if sSound == str('On'):
 		bSound = True
-	
-	# Check of glucose
-	sMin = str(iMin)
 
+	# Check of glucose after every interval for new updates
+	if sMin.endswith(str(iMinInterval)[-1:]) or sMin.endswith(str(iMinSecondInterval)[-1:]):
+		for i in range(6):
+			xbmc.sleep(int(1000))
+			if iMin == 0:
+				break
+
+	# Check of glucose
 	if iMin == 0:
 		xbmcgui.Dialog().notification(sGlucose, sJustNow, addonicon, 5000, bSound)
 	if sMin.endswith(str(iMinInterval)[-1:]) or sMin.endswith(str(iMinSecondInterval)[-1:]) and iMin >= iMinInterval:
 		sMinAgo = sColorYellow + sMinAgo + sColor
 		xbmcgui.Dialog().notification(sGlucose, sMinAgo, addonicon, 5000, bSound)
-	xbmc.sleep(iMsWait + iMsDelay)
+	xbmc.sleep(int(iMsWait))
 	
 	# Close url
 	urlEntries.close()
